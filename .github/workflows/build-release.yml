@@ -1,79 +1,141 @@
-name: Build MAUI Project
+name: Build and Release Android App
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
- 
-
-env:
-  PROJECT_PATH: "MauiApp1.sln"
+    tags:
+      - 'v*'  # This triggers the workflow only for tags starting with 'v'
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# ***************************** #
-# >>>>>>> Android build <<<<<<< #
-# ***************************** #
-  maui-android:
-    runs-on: windows-2022
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-    - name: Setup .NET Core SDK
-      uses: actions/setup-dotnet@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '8.x'
 
-    - uses: actions/setup-java@v4
-      with:
-        distribution: 'microsoft'
-        java-version: '11'
+    - name: Install dependencies
+      run: dotnet restore MauiApp1/MauiApp1.csproj
 
-    - name: Generate version number using date and run number
-      shell: pwsh
-      id: version-creator
+    - name: Build Android Release
+      run: dotnet publish MauiApp1/MauiApp1.csproj -c Release -f:net8.0-android -o ./output/android --no-restore
+
+    - name: Create Git Tag
+      id: create_tag
       run: |
-        $buildDay = Get-Date -Format "yyyy.Mdd"
-        $ver = $buildDay + "." + $env:GITHUB_RUN_NUMBER + ".0"
-        echo "APP_VERSION=$ver" >> $GITHUB_OUTPUT
-    - name: Install MAUI workloads (required for GitHub-hosted runners)
-      shell: pwsh
-      run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
+        TAG_NAME="v$(date +'%Y%m%d%H%M%S')"
+        echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+        git tag $TAG_NAME
+        git push origin $TAG_NAME
 
-    - name: Restore NuGet packages
-      shell: pwsh
-      run: dotnet restore ${{ env.PROJECT_PATH }}  #--configfile ${{ env.NUGETCONFIG_PATH }}
-
-    - name: Build Maui Android project
-      shell: pwsh
-      run: dotnet build ${{ env.PROJECT_PATH }} -c Debug --no-restore -p:PublishTrimmed=False -o ./output/andriod
-
-    - name: Create Release
+    - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ env.TAG_NAME }}
+        release_name: Release ${{ env.TAG_NAME }}
         draft: false
         prerelease: false
+        body: |
+          This is the release description.
 
-
-    - name: Upload Release Asset
-      id: upload-release-asset 
+    - name: Upload Android Build
       uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./output/mauiapp.apk  
-        asset_name: mauiapp-${{ env.APP_VERSION }}.apk  
+        asset_path: ./output/android/your_app_name.apk
+        asset_name: your_app_name.apk
         asset_content_type: application/vnd.android.package-archive
+
+
+
+
+
+
+
+
+
+# nam
+e: Build MAUI Project
+
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#       - main
+ 
+
+# env:
+#   PROJECT_PATH: "MauiApp1.sln"
+
+# jobs:
+
+# # ***************************** #
+# # >>>>>>> Android build <<<<<<< #
+# # ***************************** #
+#   maui-android:
+#     runs-on: windows-2022
+#     steps:
+#     - name: Checkout
+#       uses: actions/checkout@v4
+#       with:
+#         fetch-depth: 0
+
+#     - name: Setup .NET Core SDK
+#       uses: actions/setup-dotnet@v4
+#       with:
+#         dotnet-version: '8.0.x'
+
+#     - uses: actions/setup-java@v4
+#       with:
+#         distribution: 'microsoft'
+#         java-version: '11'
+
+#     - name: Generate version number using date and run number
+#       shell: pwsh
+#       id: version-creator
+#       run: |
+#         $buildDay = Get-Date -Format "yyyy.Mdd"
+#         $ver = $buildDay + "." + $env:GITHUB_RUN_NUMBER + ".0"
+#         echo "APP_VERSION=$ver" >> $GITHUB_OUTPUT
+#     - name: Install MAUI workloads (required for GitHub-hosted runners)
+#       shell: pwsh
+#       run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
+
+#     - name: Restore NuGet packages
+#       shell: pwsh
+#       run: dotnet restore ${{ env.PROJECT_PATH }}  #--configfile ${{ env.NUGETCONFIG_PATH }}
+
+#     - name: Build Maui Android project
+#       shell: pwsh
+#       run: dotnet build ${{ env.PROJECT_PATH }} -c Debug --no-restore -p:PublishTrimmed=False -o ./output/andriod
+
+#     - name: Create Release
+#       id: create_release
+#       uses: actions/create-release@v1
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.TOKEN }}
+#       with:
+#         tag_name: ${{ github.ref }}
+#         release_name: Release ${{ github.ref }}
+#         draft: false
+#         prerelease: false
+
+
+#     - name: Upload Release Asset
+#       id: upload-release-asset 
+#       uses: actions/upload-release-asset@v1
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       with:
+#         upload_url: ${{ steps.create_release.outputs.upload_url }}
+#         asset_path: ./output/mauiapp.apk  
+#         asset_name: mauiapp-${{ env.APP_VERSION }}.apk  
+#         asset_content_type: application/vnd.android.package-archive
 
 
 
