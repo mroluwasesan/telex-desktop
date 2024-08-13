@@ -50,16 +50,6 @@
 		<RuntimeIdentifier>$(RuntimeIdentifierOverride)</RuntimeIdentifier>
 	</PropertyGroup>
 
-	<PropertyGroup>
-	<!-- skip certificates validation for Android -->
-    	<AndroidSigningKeyStore />
-    	<AndroidSigningKeyAlias />
-    	<AndroidSigningKeyPass />
-    	<AndroidSigningStorePass />
-	</PropertyGroup>
-
-
-
 
 	<ItemGroup>
 		<!-- App Icon -->
