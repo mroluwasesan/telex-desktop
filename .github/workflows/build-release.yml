@@ -32,17 +32,17 @@ jobs:
       shell: pwsh
       run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
 
-    - name: Restore NuGet packages with RuntimeIdentifier
+    - name: Restore NuGet packages
       shell: pwsh
-      run: dotnet restore ${{ env.PROJECT_PATH }} --runtime win-x64
+      run: dotnet restore ${{ env.PROJECT_PATH }}
 
     - name: Build Maui Android project
       shell: pwsh
-      run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore -r win-x64
+      run: dotnet build D:\a\telex-desktop\telex-desktop\MauiApp1\MauiApp1.csproj -c Release --no-restore /p:RuntimeIdentifier=android-arm64
 
     - name: Publish Maui Android project
       shell: pwsh
-      run: dotnet publish ${{ env.PROJECT_PATH }} -c Release -f net8.0-android -o ./output/android
+      run: dotnet publish D:\a\telex-desktop\telex-desktop\MauiApp1\MauiApp1.csproj -c Release -f net8.0-android -o ./output/android
 
     - name: Create Release
       id: create_release
@@ -65,6 +65,7 @@ jobs:
         asset_path: ./output/android/mauiapp.apk
         asset_name: mauiapp-${{ env.APP_VERSION }}.apk
         asset_content_type: application/vnd.android.package-archive
+
 
 
 
