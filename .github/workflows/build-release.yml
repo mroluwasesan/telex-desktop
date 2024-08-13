@@ -28,25 +28,17 @@ jobs:
         distribution: 'microsoft'
         java-version: '11'
 
-    - name: Generate version number using date and run number
-      shell: pwsh
-      id: version-creator
-      run: |
-        $buildDay = Get-Date -Format "yyyy.Mdd"
-        $ver = $buildDay + "." + $env:GITHUB_RUN_NUMBER + ".0"
-        echo "APP_VERSION=$ver" >> $GITHUB_OUTPUT
-
     - name: Install MAUI workloads (required for GitHub-hosted runners)
       shell: pwsh
       run: dotnet workload install maui --source https://api.nuget.org/v3/index.json
 
-    - name: Restore NuGet packages
+    - name: Restore NuGet packages with RuntimeIdentifier
       shell: pwsh
-      run: dotnet restore ${{ env.PROJECT_PATH }}
+      run: dotnet restore ${{ env.PROJECT_PATH }} --runtime win-x64
 
     - name: Build Maui Android project
       shell: pwsh
-      run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore
+      run: dotnet build ${{ env.PROJECT_PATH }} -c Release --no-restore -r win-x64
 
     - name: Publish Maui Android project
       shell: pwsh
@@ -73,6 +65,7 @@ jobs:
         asset_path: ./output/android/mauiapp.apk
         asset_name: mauiapp-${{ env.APP_VERSION }}.apk
         asset_content_type: application/vnd.android.package-archive
+
 
 
 
